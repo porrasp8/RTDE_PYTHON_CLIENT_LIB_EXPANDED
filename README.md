@@ -1,91 +1,151 @@
-# RTDE client library - Python
-Library implements API for Universal Robots RTDE realtime interface.
+# Move UR with python scripts
 
-Full RTDE description is available on [Universal Robots support site](https://www.universal-robots.com/support/)
-# Project structure
-## rtde
-RTDE core library
+## Index
+* [Introduction](#introduction)
+* [External Control](#external-control)
+* [Python Scripts(external computer)](#python-scripts)
+    * [Set Up](#set-up)
+    * [Communication](#communication)
+* [URP Script(Robot)](#urp-script)
+    * [MoveJ and ServoJ](#movej-and-servoj)
 
-- rtde.py:
-RTDE connection management object
+### Introduction
 
-- rtde_config.py:
-XML configuration files parser
+RTDE client library API for Universal Robots RTDE realtime interface.
+You can see basic information for this library and her behavior in the following pages:
 
-- csv_writer.py, csv_reader.py: 
-read and write rtde data objects to text csv files
+- [RTDE client library github repo](https://github.com/UniversalRobots/RTDE_Python_Client_Library)
+- [UR RTDE guide](https://www.universal-robots.com/download/manuals-e-seriesur20ur30/script/script-manual-e-series-sw-511/)
+- [URScript API Reference](https://s3-eu-west-1.amazonaws.com/ur-support-site/50689/scriptManual.pdf)
+- [YouTube Tutorial](https://www.youtube.com/playlist?list=PLnJ9fSRnDN3B1wEuxQY4thTWyGoT2N0yd)
 
-## examples
-- record.py - example of recording realtime data from selected channels.
-- example_control_loop.py - example for controlling robot motion. Program moves robot between 2 setpoints.
-Copy rtde_control_loop.urp to the robot. Start python script before starting program.
-- example_plotting.py - example for using csv_reader, and plotting selected data.
+### External Control
 
-### Running examples
-It's recommended to run examples in [virtual environment](https://docs.python.org/3/library/venv.html).
-Some require additional libraries.
-```
-python record.py -h
-python record.py --host 192.168.0.1 --frequency 10
-```
-# Using robot simulator in Docker
-RTDE can connect from host system to controller running in Docker
-when RTDE port 30004 is forwarded.
-1. Get latest ursim docker image: docker pull universalrobots/ursim_e-series
-2. Run docker container: docker run --rm -dit -p 30004:30004 -p 5900:5900 -p 6080:6080 universalrobots/ursim_e-series
-3. open vnc client in browser, and confirm safet: http://localhost:6080/vnc.html?host=docker_ip&port=6080
+To communicate your external computer with the robot once, the recommend and easisest method is the direct Ethernet connection. For this we only need to follow two steps:
+1. Configure the Ip address and communication port(in robot): In my case I use the following parameters:
 
-More information about ursim docker image is available on [Dockerhub](https://hub.docker.com/r/universalrobots/ursim_e-series)
+<p align="center">
+<img src="" alt="external control pic" width="400" height="400"/>
+</p>
 
-# Using robot simulator in VirtualBox
-RTDE can connect from host system to controller running in VirtualBox
-when RTDE port 30004 is forwarded.
-1. Download simulator from [Universal Robots support site](https://www.universal-robots.com/support/)
-2. Run simulator in VirtualBox
-3. Open menu Devices->Network Settings
-4. Open Advanced settings for NAT
-5. Open Port Forwarding
-6. Add new rule, setting host, and guest ports to 30004. 
-Leave host, and guest IP fields blank.
+2. Set up a static IP in the external computer: In my case I use the following parameters:
 
-# Using rtde library
-Copy rtde folder python project
-Library is compatible with Python 2.7+, and Python 3.6+
+<p align="center">
+<img src="https://github.com/porrasp8/RTDE_PYTHON_CLIENT_LIB_EXPANDED/assets/72991722/88f9169b-bd60-44fc-9a77-89422fee5cad" alt="external control pc pic" width="500" height="250"/>
+</p>
 
-# Build release package
-```
-mvn package
-```
-## Using with virtual environment
-Create virtual environment, and install wheel package
 
-### Linux & MacOS
-```
-python -m venv venv
-source venv/bin/activate
-pip install wheel
-```
-Install rtde package
-```
-pip install target/rtde-<version>-release.zip
-```
+### Python Scripts
 
-### Windows PowerShell
-If Python3 is not installed, then just run python3 from powershell. Microsoft store will launch the installation.
+#### Set up
 
-Permission to run scripts in console is needed to activate virtual envrionment.
-```
-set-executionpolicy -Scope CurrentUser -ExecutionPolicy Unrestricted
-python -m venv venv
-venv/Scripts/Activate.ps1
-pip install wheel
-```
-Install rtde package
-```
-pip install target/rtde-<version>-release.zip
+In order to communicate with the robot we need to set some variables in our python script:
+- ROBOT_HOST = '192.168.1.102' -> Ip previously configured in our robot
+- ROBOT_PORT = 30004 -> Communication port, 30004 is used for RTDE communication
+- CONFIG_FILENAME = 'config/servoJ_movemnet_conf.xml' -> Configuration file that indicates the variables that will be transmitted in the communication, both from the client and the robot side
+- SEND_FREQUENCY = 500 -> Number of messages sended per second
+
+#### Communication
+
+The communication is configured following the following snippet:
+
+``` py
+# -------- Communication vars init -------- #
+conf = rtde_config.ConfigFile(CONFIG_FILENAME)
+state_names, state_types = conf.get_recipe('state')  # Define recipe for access to robot output ex. joints,tcp etc.
+setp_names, setp_types = conf.get_recipe('setp')  # Define recipe for access to robot input
+watchdog_names, watchdog_types= conf.get_recipe('watchdog')
+
+# -------- Establish connection -------- #
+    con = rtde.RTDE(ROBOT_HOST, ROBOT_PORT)
+    con.connect()
+    connection_state = con.is_connected()
+
+    # check if connection has been established
+    while connection_state != True:
+        time.sleep(0.5)
+        con.connect()
+        connection_state = con.is_connected()
+    print("---------------Successfully connected to the robot-------------\n")
 ```
 
-# Contributor guidelines
-Code is formatted with [black](https://github.com/psf/black).
-Run code formatter before submitting pull request.
+To send data to the robot we will use:
+``` py
+con.send(setp)
+con.send(watchdog)
+```
+
+And to send information to the external computer we will use:
+``` py
+state = con.receive()
+```
+
+The information sent in each case is defined in the previously mentioned configuration file "config/servoJ_movemnet_conf.xml", among the possible types of data that we can find in the guide.
+
+servoJ_movemnet_conf.xml:
+``` xml
+<?xml version="1.0"?>
+<rtde_config>
+	<recipe key="state">
+		<field name="output_bit_registers0_to_31" type="UINT32"/>
+		<field name="output_int_register_0" type="INT32"/>
+		<field name="output_double_register_0" type="DOUBLE"/>
+		<field name="output_double_register_1" type="DOUBLE"/>
+		<field name="output_double_register_2" type="DOUBLE"/>
+		<field name="output_double_register_3" type="DOUBLE"/>
+		<field name="output_double_register_4" type="DOUBLE"/>
+		<field name="output_double_register_5" type="DOUBLE"/>
+		<field name="actual_q" type="VECTOR6D"/>
+		<field name="actual_TCP_pose" type="VECTOR6D"/>
+		
+	</recipe>
+
+	<recipe key="setp">
+		<field name="input_double_register_0" type="DOUBLE"/>
+		<field name="input_double_register_1" type="DOUBLE"/>
+		<field name="input_double_register_2" type="DOUBLE"/>
+		<field name="input_double_register_3" type="DOUBLE"/>
+		<field name="input_double_register_4" type="DOUBLE"/>
+		<field name="input_double_register_5" type="DOUBLE"/>
+	</recipe>
+
+	<recipe key="watchdog">
+		<field name="input_int_register_0" type="INT32"/>
+	</recipe>
+</rtde_config>
+```
+
+In this case, the **setp** values are used to send target positions to the robot, the **watchdog** is used to indicate operating modes (Stop, moveJ, servoJ) and the **state** values to receive information of interest to the script.
+
+
+
+
+### URP Script
+
+The program loaded on the robot follows the ".urp" extension and will have to be composed of a thread that is responsible for reading the information sent by the computer and the main thread that will be responsible for carrying out the appropriate operations for each of the situations. and send the feedback to the external computer
+
+
+#### MoveJ and ServoJ
+
+The main difference between these two is that MoveJ is blocking while ServoJ is not, and the second can also operate at 500Hz, which results in a very fast response. For more information consult the URScript Api.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
