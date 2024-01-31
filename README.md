@@ -6,8 +6,8 @@
 * [Python Scripts(external computer)](#python-scripts)
     * [Set Up](#set-up)
     * [Communication](#communication)
+* [URP Script(Robot)](#urp-script)
     * [MoveJ and ServoJ](#movej-and-servoj)
-* [URP Script(Robot)](#urp-script-(robot))
 
 ### Introduction
 
@@ -118,7 +118,30 @@ servoJ_movemnet_conf.xml:
 In this case, the **setp** values are used to send target positions to the robot, the **watchdog** is used to indicate operating modes (Stop, moveJ, servoJ) and the **state** values to receive information of interest to the script.
 
 
+
+
+### URP Script
+
+The program loaded on the robot follows the ".urp" extension and will have to be composed of a thread that is responsible for reading the information sent by the computer and the main thread that will be responsible for carrying out the appropriate operations for each of the situations. and send the feedback to the external computer
+
+
 #### MoveJ and ServoJ
+
+The main difference between these two is that MoveJ is blocking while ServoJ is not, and the second can also operate at 500Hz, which results in a very fast response. For more information consult the URScript Api.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
