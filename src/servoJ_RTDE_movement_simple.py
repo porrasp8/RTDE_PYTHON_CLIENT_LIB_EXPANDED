@@ -101,7 +101,7 @@ def main():
             break
     
     # ====================mode 2(ServoJ)===================
-    print("-------Executing servoJ  -----------\n")
+    print("------- Executing servoJ  -----------\n")
     watchdog.input_int_register_0 = 2
     next_pose = START_POSE
     con.send(watchdog)  # sending mode == 2

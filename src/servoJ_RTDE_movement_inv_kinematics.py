@@ -18,13 +18,20 @@ POINT_STEP = 0.01
 
 ## Positions
 #START_POSE = [-0.042, 0.351, 0.61, 1.08, 1.3, -1.16]
-START_POSE = [0.0232, -0.34, 0.523, -0.72, -1.83, 2.38]
-POSE1 = [0, -0.34, 0.69, 0.23, 1.41, -2.54]
+#START_POSE = [0.0232, -0.34, 0.523, -0.72, -1.83, 2.38]
+#POSE1 = [0, -0.34, 0.69, 0.23, 1.41, -2.54]
+START_POSE = [0.091, -0.34, 0.501, -0.053, 2.14, -2.13]
 
 ### Test positions
 POSE2_1 = [0.57, 0.11, 0.3, -1.83, 1.84, -0.59]
 POSE2_2 = [0.07, -0.57, 0.297, 0.114, 2.96, -1.0]
 POSE2_3 = [0.47, -0.506, 0.124, 0.186, 2.22, -1.26]
+
+### Squeare test positions
+POSE3_1 = [0.57, 0.11, 0.3, -1.83, 1.84, -0.59]
+POSE3_2 = [0.07, -0.57, 0.297, 0.114, 2.96, -1.0]
+POSE3_3 = [0.47, -0.506, 0.124, 0.186, 2.22, -1.26]
+POSE3_4 = [0.47, -0.506, 0.124, 0.186, 2.22, -1.26]
 
 
 ## Modes
@@ -72,7 +79,7 @@ def change_mode(connection, mode):
     watchdog.input_int_register_0 = mode
     connection.send(watchdog)
 
-def stop_mode_wait(connection, next_mode):
+def stop_mode_wait(connection):
     """
     @params: connection (rtde.RTDE) -> communication chanel
     @descrption: Send new mode and wait until popup, blocking function
@@ -81,9 +88,8 @@ def stop_mode_wait(connection, next_mode):
     while True:
         print('Stop mode, please click CONTINUE on the Polyscope')
         state = connection.receive()
-        change_mode(connection, next_mode)
         if state.output_bit_registers0_to_31 == True:
-                print('Stop mode finish, Robot Program can proceed to mode: ', next_mode)
+                print('Stop mode finish, Robot Program can proceed to mode')
                 break
 
 
@@ -99,10 +105,10 @@ def moveJ_request(connection, pose):
     connection.send(setp) # sending initial pose
 
     while True:
-        print('Waiting for movej() to finish')
+        #print('Waiting for movej() to finish')
         state = connection.receive()
-        if state.output_bit_registers0_to_31 == True:
-            print('ModeJ Finished\n')
+        if state.output_bit_registers0_to_31 == False:
+            #print('ModeJ Finished\n')
             break
 
 def servoJ_request(connection, pose):
@@ -143,8 +149,6 @@ setp.input_bit_registers0_to_31 = 0
 
 watchdog.input_int_register_0 = 0
 
-current_mode = STOP
-
 if not con.send_start():
     print("--------------- Server start error -------------\n")
     sys.exit()
@@ -153,21 +157,17 @@ if not con.send_start():
 def main():
 
     # ====================mode 0(Stop)===================
-    stop_mode_wait(con, MOVEJ)
+    stop_mode_wait(con)
 
     # ====================mode 1(MoveJ)===================
 
+    change_mode(con, MOVEJ)
     moveJ_request(con, START_POSE)
-    print("Start Pose reached")
-    moveJ_request(con, POSE1)
-    print("Start Pose1")
-    moveJ_request(con, START_POSE)
-    print("Start Pose reached")
+    print("Start Pose2 reached")
     
     # ====================mode 2(ServoJ)===================
     print("-------Executing servoJ  -----------\n")
-    current_mode = SERVOJ
-    change_mode(con, current_mode)
+    change_mode(con, SERVOJ)
     
     state = con.receive()
 
@@ -181,18 +181,18 @@ def main():
 
     # Send positions
     servoJ_request(con, POSE2_1)
-    time.sleep(10)
+    time.sleep(5)
     servoJ_request(con, POSE2_2)
     time.sleep(1)
     servoJ_request(con, POSE2_3)
-    time.sleep(10)
+    time.sleep(5)
+
 
     if state.output_bit_registers0_to_31 == True:
         print('Proceeding to mode 3 --- Exit...\n')    
 
     # ====================mode 3(Disconnect)===================
-    watchdog.input_int_register_0 = 3
-    con.send(watchdog)
+    change_mode(con, 3)
 
     con.send_pause()
     con.disconnect()
