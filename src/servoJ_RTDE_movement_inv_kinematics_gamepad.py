@@ -24,7 +24,7 @@ POINT_STEP = 0.01
 #START_POSE = [-0.042, 0.351, 0.61, 1.08, 1.3, -1.16]
 #START_POSE = [0.0232, -0.34, 0.523, -0.72, -1.83, 2.38]
 #POSE1 = [0, -0.34, 0.69, 0.23, 1.41, -2.54]
-START_POSE = [0.091, -0.34, 0.501, -0.053, 2.14, -2.13]
+START_POSE = [-0.021, -0.34, 0.501, -0.053, 2.14, -2.13]
 
 ### Test positions
 POSE2_1 = [0.57, 0.11, 0.3, -1.83, 1.84, -0.59]
@@ -32,7 +32,7 @@ POSE2_2 = [0.07, -0.57, 0.297, 0.114, 2.96, -1.0]
 POSE2_3 = [0.47, -0.506, 0.124, 0.186, 2.22, -1.26]
 
 ### Sin position
-SIN_START_POSE = [0.091, -0.34, 0.501, -0.053, 2.14, -2.13]
+SIN_START_POSE = [-0.021, -0.34, 0.501, -0.053, 2.14, -2.13]
 SIN_FINAL_POSE = [-0.135, -0.45, 0.576, -0.053, 2.14, -2.13]
 SIN_ORIENTATION_CONST = SIN_START_POSE[3:]
 SIN_TRAJECTORY_TIME = 8
@@ -161,10 +161,6 @@ if not con.send_start():
 
 #-- Mapper setup
 map_gamepad_input_into_pos = interp1d([-35768,35768],[-0.135,0.091])
-counter = 0
-t_current = 0
-t_start = time.time()
-
 
 def main():
 
@@ -182,13 +178,9 @@ def main():
     change_mode(con, SERVOJ)
     
     state = con.receive()
-    t_current = 0
 
     while True:
         
-        t_prev = t_current
-        t_current = time.time() - t_start
-
         #-- Current pos
         state = con.receive()
         pos = state.actual_TCP_pose
@@ -199,7 +191,7 @@ def main():
             if(event.code == "ABS_RX"):
                 print("Gamepad input: ", event.state)
 
-                 #-- Map input into TCP pos
+                #-- Map input into TCP pos
                 #print(map_gamepad_input_into_pos(event.state))
                 pos_0 = map_gamepad_input_into_pos(event.state)
                 pos[0] = pos_0
