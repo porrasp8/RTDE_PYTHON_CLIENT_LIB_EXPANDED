@@ -16,7 +16,7 @@ from scipy.interpolate import interp1d
 ## Communication
 ROBOT_HOST = '192.168.1.102'
 ROBOT_PORT = 30004 # RTDE port
-CONFIG_FILENAME = 'config/servoJ_movemnet_conf.xml'
+CONFIG_FILENAME = 'config/servoJ_movemnet_conf_simple.xml'
 SEND_FREQUENCY = 500
 POINT_STEP = 0.01
 
@@ -179,27 +179,36 @@ def main():
     
     state = con.receive()
 
+    t_current = 0
+    t_start = time.time()
+    counter = 0
+
+    pos = START_POSE
+
     while True:
         
-        #-- Current pos
-        state = con.receive()
-        pos = state.actual_TCP_pose
+        t_prev = t_current
+        t_current = time.time() - t_start
 
         #-- Gamepad input
-        events = inputs.get_gamepad()
-        for event in events:
-            if(event.code == "ABS_RX"):
-                print("Gamepad input: ", event.state)
+        events = inputs.devices.gamepads[0]._do_iter()
+        if(events != None):
+            for event in events:
+                if(event.code == "ABS_RX"):
+                    print("Gamepad input: ", event.state)
 
-                #-- Map input into TCP pos
-                #print(map_gamepad_input_into_pos(event.state))
-                pos_0 = map_gamepad_input_into_pos(event.state)
-                pos[0] = pos_0
+                    #-- Map input into TCP pos
+                    #print(map_gamepad_input_into_pos(event.state))
+                    pos[0] = map_gamepad_input_into_pos(event.state)
+                    list_to_setp(setp, pos)
+                    con.send(setp)
 
-                #-- Send pos
-                list_to_setp(setp, pos)
-                con.send(setp)
-                print(pos)
+    
+
+        #-- Send pos
+        print("Counter: ", counter, " DT: ", t_current-t_prev)
+        print(pos)
+        counter += 1
             
             
 
