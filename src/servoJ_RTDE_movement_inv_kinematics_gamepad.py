@@ -5,6 +5,10 @@ import rtde.rtde as rtde
 import rtde.rtde_config as rtde_config
 import time
 import random
+import inputs
+from sin_planner import PathPlanSine
+from scipy.interpolate import interp1d
+
 
 
 # -------- Consts -------- #
@@ -27,11 +31,12 @@ POSE2_1 = [0.57, 0.11, 0.3, -1.83, 1.84, -0.59]
 POSE2_2 = [0.07, -0.57, 0.297, 0.114, 2.96, -1.0]
 POSE2_3 = [0.47, -0.506, 0.124, 0.186, 2.22, -1.26]
 
-### Squeare test positions
-POSE3_1 = [0.57, 0.11, 0.3, -1.83, 1.84, -0.59]
-POSE3_2 = [0.07, -0.57, 0.297, 0.114, 2.96, -1.0]
-POSE3_3 = [0.47, -0.506, 0.124, 0.186, 2.22, -1.26]
-POSE3_4 = [0.47, -0.506, 0.124, 0.186, 2.22, -1.26]
+### Sin position
+SIN_START_POSE = [0.091, -0.34, 0.501, -0.053, 2.14, -2.13]
+SIN_FINAL_POSE = [-0.135, -0.45, 0.576, -0.053, 2.14, -2.13]
+SIN_ORIENTATION_CONST = SIN_START_POSE[3:]
+SIN_TRAJECTORY_TIME = 8
+DT = 1/500  # 500 Hz 
 
 
 ## Modes
@@ -154,6 +159,12 @@ if not con.send_start():
     print("--------------- Server start error -------------\n")
     sys.exit()
 
+#-- Mapper setup
+map_gamepad_input_into_pos = interp1d([-35768,35768],[-0.135,0.091])
+counter = 0
+t_current = 0
+t_start = time.time()
+
 
 def main():
 
@@ -171,33 +182,34 @@ def main():
     change_mode(con, SERVOJ)
     
     state = con.receive()
+    t_current = 0
 
-    #-- Current pose
-    state = con.receive()
-    current_joints = state.actual_q
-    current_tcp_pose = state.actual_TCP_pose
+    while True:
+        
+        t_prev = t_current
+        t_current = time.time() - t_start
 
-    print("Joints: ", current_joints)
-    print("Actual TCP pose : ", current_tcp_pose)
+        #-- Current pos
+        state = con.receive()
+        pos = state.actual_TCP_pose
 
-    # Send positions
-    servoJ_request(con, POSE2_1)
-    time.sleep(5)
-    servoJ_request(con, POSE2_2)
-    time.sleep(1)
-    servoJ_request(con, POSE2_3)
-    time.sleep(5)
+        #-- Gamepad input
+        events = inputs.get_gamepad()
+        for event in events:
+            if(event.code == "ABS_RX"):
+                print("Gamepad input: ", event.state)
 
+                 #-- Map input into TCP pos
+                #print(map_gamepad_input_into_pos(event.state))
+                pos_0 = map_gamepad_input_into_pos(event.state)
+                pos[0] = pos_0
 
-    if state.output_bit_registers0_to_31 == True:
-        print('Proceeding to mode 3 --- Exit...\n')    
-
-    # ====================mode 3(Disconnect)===================
-    change_mode(con, EXIT)
-
-    con.send_pause()
-    con.disconnect()
-
+                #-- Send pos
+                list_to_setp(setp, pos)
+                con.send(setp)
+                print(pos)
+            
+            
 
 if __name__ == "__main__":
     main()

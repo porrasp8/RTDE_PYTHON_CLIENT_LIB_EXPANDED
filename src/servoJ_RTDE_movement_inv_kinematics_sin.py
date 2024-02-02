@@ -5,6 +5,7 @@ import rtde.rtde as rtde
 import rtde.rtde_config as rtde_config
 import time
 import random
+from sin_planner import PathPlanSine
 
 
 # -------- Consts -------- #
@@ -27,11 +28,12 @@ POSE2_1 = [0.57, 0.11, 0.3, -1.83, 1.84, -0.59]
 POSE2_2 = [0.07, -0.57, 0.297, 0.114, 2.96, -1.0]
 POSE2_3 = [0.47, -0.506, 0.124, 0.186, 2.22, -1.26]
 
-### Squeare test positions
-POSE3_1 = [0.57, 0.11, 0.3, -1.83, 1.84, -0.59]
-POSE3_2 = [0.07, -0.57, 0.297, 0.114, 2.96, -1.0]
-POSE3_3 = [0.47, -0.506, 0.124, 0.186, 2.22, -1.26]
-POSE3_4 = [0.47, -0.506, 0.124, 0.186, 2.22, -1.26]
+### Sin position
+SIN_START_POSE = [0.091, -0.34, 0.501, -0.053, 2.14, -2.13]
+SIN_FINAL_POSE = [-0.135, -0.45, 0.576, -0.053, 2.14, -2.13]
+SIN_ORIENTATION_CONST = SIN_START_POSE[3:]
+SIN_TRAJECTORY_TIME = 8
+DT = 1/500  # 500 Hz 
 
 
 ## Modes
@@ -169,24 +171,43 @@ def main():
     # ====================mode 2(ServoJ)===================
     print("-------Executing servoJ  -----------\n")
     change_mode(con, SERVOJ)
+    planner = PathPlanSine(SIN_START_POSE, SIN_FINAL_POSE, SIN_TRAJECTORY_TIME)
     
     state = con.receive()
 
-    #-- Current pose
-    state = con.receive()
-    current_joints = state.actual_q
-    current_tcp_pose = state.actual_TCP_pose
 
-    print("Joints: ", current_joints)
-    print("Actual TCP pose : ", current_tcp_pose)
 
-    # Send positions
-    servoJ_request(con, POSE2_1)
-    time.sleep(5)
-    servoJ_request(con, POSE2_2)
-    time.sleep(1)
-    servoJ_request(con, POSE2_3)
-    time.sleep(5)
+    for i in range(10):
+        #-- Current pose
+        state = con.receive()
+        current_joints = state.actual_q
+        current_tcp_pose = state.actual_TCP_pose
+        t_current = 0
+        t_start = time.time()
+        counter = 0
+
+        print("Joints: ", current_joints)
+        print("Actual TCP pose : ", current_tcp_pose)
+
+        while time.time() - t_start < SIN_TRAJECTORY_TIME:
+            state = con.receive()
+            t_prev = t_current
+            t_current = time.time() - t_start
+
+            print("Counter: ", counter, " DT: ", t_current-t_prev)
+            # read state from the robot
+            if state.runtime_state > 1:
+                #   ----------- minimum_jerk trajectory --------------
+                if t_current <= SIN_TRAJECTORY_TIME:
+                    [position_ref, lin_vel_ref, acceleration_ref] = planner.trajectory_planning(t_current)
+
+                # ------------------ impedance -----------------------
+                pose = position_ref.tolist() + SIN_ORIENTATION_CONST
+
+                list_to_setp(setp, pose)
+                con.send(setp)
+                counter += 1
+
 
 
     if state.output_bit_registers0_to_31 == True:
