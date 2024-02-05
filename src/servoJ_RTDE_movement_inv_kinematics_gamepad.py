@@ -17,7 +17,7 @@ from scipy.interpolate import interp1d
 ROBOT_HOST = '192.168.1.102'
 ROBOT_PORT = 30004 # RTDE port
 CONFIG_FILENAME = 'config/servoJ_movemnet_conf_simple.xml'
-SEND_FREQUENCY = 500
+SEND_FREQUENCY = 125
 POINT_STEP = 0.01
 
 ## Positions
@@ -36,7 +36,6 @@ SIN_START_POSE = [-0.021, -0.34, 0.501, -0.053, 2.14, -2.13]
 SIN_FINAL_POSE = [-0.135, -0.45, 0.576, -0.053, 2.14, -2.13]
 SIN_ORIENTATION_CONST = SIN_START_POSE[3:]
 SIN_TRAJECTORY_TIME = 8
-DT = 1/500  # 500 Hz 
 
 
 ## Modes
@@ -198,16 +197,14 @@ def main():
                     print("Gamepad input: ", event.state)
 
                     #-- Map input into TCP pos
-                    #print(map_gamepad_input_into_pos(event.state))
                     pos[0] = map_gamepad_input_into_pos(event.state)
                     list_to_setp(setp, pos)
-                    con.send(setp)
 
     
-
         #-- Send pos
         print("Counter: ", counter, " DT: ", t_current-t_prev)
         print(pos)
+        con.send(setp)
         counter += 1
             
             
