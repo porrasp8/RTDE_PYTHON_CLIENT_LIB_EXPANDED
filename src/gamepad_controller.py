@@ -8,7 +8,7 @@ while True:
     events = inputs.devices.gamepads[0]._do_iter()
     if events == None:
         time.sleep(0.0001)
-        print("None")
+        #print("None")
 
     else:
         for event in events:
@@ -19,4 +19,4 @@ while True:
                 print(event.state)
 
 
-    print("Step")
+    #print("Step")

@@ -160,7 +160,8 @@ if not con.send_start():
     sys.exit()
 
 #-- Mapper setup
-map_gamepad_input_into_pos = interp1d([-35768,35768],[-0.135,0.091])
+map_gamepad_input_into_pos_x = interp1d([35768,-35768],[-0.135,0.091])
+map_gamepad_input_into_pos_z = interp1d([35768,-35768],[0.32,0.549])
 
 def main():
 
@@ -198,8 +199,15 @@ def main():
                     print("Gamepad input: ", event.state)
 
                     #-- Map input into TCP pos
-                    pos[0] = map_gamepad_input_into_pos(event.state)
+                    pos[0] = map_gamepad_input_into_pos_x(event.state)
                     list_to_setp(setp, pos)
+
+                if(event.code == "ABS_RY"):
+                    print("Gamepad input: ", event.state)
+                    #-- Map input into TCP pos
+                    pos[2] = map_gamepad_input_into_pos_z(event.state)
+                    list_to_setp(setp, pos)
+
 
     
         #-- Send pos

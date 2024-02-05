@@ -11,7 +11,8 @@ from sin_planner import PathPlanSine
 # -------- Consts -------- #
 
 ## Communication
-ROBOT_HOST = '192.168.1.102'
+ROBOT_HOST = '192.168.1.102'   #-- Real Robot
+#ROBOT_HOST = '10.198.15.8'   #-- Simulated Robot
 ROBOT_PORT = 30004 # RTDE port
 CONFIG_FILENAME = 'config/servoJ_movemnet_conf.xml'
 SEND_FREQUENCY = 500
