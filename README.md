@@ -8,6 +8,8 @@
     * [Communication](#communication)
 * [URP Script(Robot)](#urp-script)
     * [MoveJ and ServoJ](#movej-and-servoj)
+* [URsim](#ursim)
+* [URrobots Backup](#urrobots-backup)
 
 ### Introduction
 
@@ -130,17 +132,39 @@ The program loaded on the robot follows the ".urp" extension and will have to be
 The main difference between these two is that MoveJ is blocking while ServoJ is not, and the second can also operate at 500Hz, which results in a very fast response. For more information consult the URScript Api.
 
 
+### URsim
+
+The same code also can be runned and tested into the Universal Robots simulator(URsim), to configure it we need to follow some steps. You can also learn more about it [here](https://www.universal-robots.com/download/software-cb-series/simulator-non-linux/offline-simulator-cb-series-non-linux-ursim-3158/):
+
+
+It is advisable to install it in a linux virtual machine using a non-linux/offline-simulator image. This image can be downloaded in the official universal robots site. [Link to the last current version](https://www.universal-robots.com/download/software-cb-series/simulator-non-linux/offline-simulator-cb-series-non-linux-ursim-3158/).
+
+
+Once we have the virtual machine configured as indicated in the tutorial we need to set up a ethernet connection between the VM and our host computer(like, Real UR - Host computer connection). In my case I modify the VM Network settings(Select the desired VM -> Settings -> Network) as can be seen in the image below: 
+
+
+<p align="center">
+<img src="https://github.com/porrasp8/RTDE_PYTHON_CLIENT_LIB_EXPANDED/assets/72991722/0844c097-6576-49c5-ac12-e85c196d697d" alt="external control pc pic" width="750" height="500"/>
+</p>
+
+
+Now we can power on the VM and use the command **ifconfig** in a terminal window to see the configured IP address and send a ping signal from our computer to check the connection between the two, such as:
+
+``` sh
+ping 10.198.15.8
+```
+
+Now we will only need to modify the IP address of the robot in our code and we can run it the same as in the real robot.
 
 
 
+### URrobots Backup
 
+In order to make a backup copy of any of the UR robots, there are mainly two ways:
 
+1. Using Ur magci files: Universal robots allows as to introduce some scripts(.sh) in a USB, plug it in the robot and it automatically extract some intereseting files(like programas, logs...) but it can`t extrcat the full systmem. You can see more infromation about this script [here](https://www.universal-robots.com/download/software-e-series/support/magic-files/magic-file-backup-all-programs/).
 
-
-
-
-
-
+2. Extracting the memory USB of the robot(it can be found in the controller case) and pluging in our computer to make a raw copy of the files.
 
 
 
